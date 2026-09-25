@@ -1,0 +1,32 @@
+{
+  "name": "Apartment Sim",
+  "id": "/index.html",
+  "short_name": "Apartment Sim",
+  "description": "A Sims-inspired life and home management game.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8f6f4",
+  "theme_color": "#f8f6f4",
+  "icons": [
+    {
+      "src": "./icons/apartment-sim-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./screenshots/apartment-sim-mobile.png",
+      "sizes": "422x917",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "./screenshots/apartment-sim-desktop.png",
+      "sizes": "1917x1012",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ]
+}
