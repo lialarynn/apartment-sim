@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Apartment Sim</title>
-
-    <link rel="stylesheet" href="css/style.css">
 
     <link rel="stylesheet" href="css/style.css">
     <link rel="manifest" href="manifest.json">
@@ -16,175 +15,300 @@
 
     <main class="game">
 
+        <!-- =========================
+             HEADER
+             ========================= -->
+
         <header class="top-bar">
+
             <div>
                 <h1>☾ Apartment Sim</h1>
                 <p id="current-date"></p>
             </div>
 
             <div class="player-level">
-                <span>LEVEL <strong id="level">1</strong></span>
+
+                <span>
+                    LEVEL <strong id="level">1</strong>
+                </span>
 
                 <div class="xp-bar">
                     <div id="xp-fill"></div>
                 </div>
 
-                <span id="xp-text">0 / 100 XP</span>
+                <span id="xp-text">
+                    0 / 100 XP
+                </span>
+
             </div>
+
         </header>
 
 
+        <!-- =========================
+             NAVIGATION
+             ========================= -->
+
         <nav class="main-nav">
 
-            <button class="nav-button active" data-page="home">
+            <button
+                type="button"
+                class="nav-button active"
+                data-page="home"
+            >
                 Home
             </button>
 
-            <button class="nav-button" data-page="cleaning">
+            <button
+                type="button"
+                class="nav-button"
+                data-page="cleaning"
+            >
                 Cleaning
             </button>
 
-            <button class="nav-button" data-page="hunger">
+            <button
+                type="button"
+                class="nav-button"
+                data-page="hunger"
+            >
                 Hunger
             </button>
 
-            <button class="nav-button" data-page="energy">
+            <button
+                type="button"
+                class="nav-button"
+                data-page="energy"
+            >
                 Energy
             </button>
 
-            <button class="nav-button" data-page="fun">
+            <button
+                type="button"
+                class="nav-button"
+                data-page="fun"
+            >
                 Fun
             </button>
 
-            <button class="nav-button" data-page="social">
+            <button
+                type="button"
+                class="nav-button"
+                data-page="social"
+            >
                 Social
+            </button>
+
+            <button
+                type="button"
+                class="nav-button"
+                data-page="achievements"
+            >
+                Achievements
             </button>
 
         </nav>
 
-        <div class="needs-popup needs-popup-hidden" id="needs-popup">
 
-    <div class="needs-popup-header">
-        <div>
-            <span class="needs-popup-title">Needs</span>
-            <span class="needs-popup-mood" id="popup-mood">
-                Feeling Neutral
-            </span>
+        <!-- =========================
+             NEEDS POPUP
+             ========================= -->
+
+        <div
+            class="needs-popup needs-popup-hidden"
+            id="needs-popup"
+        >
+
+            <div class="needs-popup-header">
+
+                <div>
+                    <span class="needs-popup-title">
+                        Needs
+                    </span>
+
+                    <span
+                        class="needs-popup-mood"
+                        id="popup-mood"
+                    >
+                        Feeling Neutral
+                    </span>
+                </div>
+
+                <button
+                    type="button"
+                    class="needs-popup-toggle"
+                    id="needs-popup-toggle"
+                    aria-label="Close needs panel"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div class="needs-popup-list">
+
+                <div class="popup-need">
+
+                    <div class="popup-need-header">
+                        <span>Cleanliness</span>
+                        <span id="popup-cleanliness-value">
+                            50%
+                        </span>
+                    </div>
+
+                    <div class="popup-need-bar">
+                        <div id="popup-cleanliness-bar"></div>
+                    </div>
+
+                </div>
+
+
+                <div class="popup-need">
+
+                    <div class="popup-need-header">
+                        <span>Hunger</span>
+                        <span id="popup-hunger-value">
+                            50%
+                        </span>
+                    </div>
+
+                    <div class="popup-need-bar">
+                        <div id="popup-hunger-bar"></div>
+                    </div>
+
+                </div>
+
+
+                <div class="popup-need">
+
+                    <div class="popup-need-header">
+                        <span>Energy</span>
+                        <span id="popup-energy-value">
+                            50%
+                        </span>
+                    </div>
+
+                    <div class="popup-need-bar">
+                        <div id="popup-energy-bar"></div>
+                    </div>
+
+                </div>
+
+
+                <div class="popup-need">
+
+                    <div class="popup-need-header">
+                        <span>Fun</span>
+                        <span id="popup-fun-value">
+                            50%
+                        </span>
+                    </div>
+
+                    <div class="popup-need-bar">
+                        <div id="popup-fun-bar"></div>
+                    </div>
+
+                </div>
+
+
+                <div class="popup-need">
+
+                    <div class="popup-need-header">
+                        <span>Social</span>
+                        <span id="popup-social-value">
+                            50%
+                        </span>
+                    </div>
+
+                    <div class="popup-need-bar">
+                        <div id="popup-social-bar"></div>
+                    </div>
+
+                </div>
+
+
+                <div class="popup-need">
+
+                    <div class="popup-need-header">
+                        <span>Environment</span>
+                        <span id="popup-environment-value">
+                            50%
+                        </span>
+                    </div>
+
+                    <div class="popup-need-bar">
+                        <div id="popup-environment-bar"></div>
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
+
+
+        <!-- NEEDS POPUP OPEN BUTTON -->
 
         <button
             type="button"
-            class="needs-popup-toggle"
-            id="needs-popup-toggle"
-            aria-label="Close needs panel"
+            class="needs-popup-open"
+            id="needs-popup-open"
+            aria-label="Open Needs panel"
         >
-            ×
+            <span class="needs-popup-open-icon">☾</span>
+            <span>Needs</span>
         </button>
 
-    </div>
 
-    <div class="needs-popup-list">
+        <!-- =========================
+             HOME
+             ========================= -->
 
-        <div class="popup-need">
-            <div class="popup-need-header">
-                <span>Cleanliness</span>
-                <span id="popup-cleanliness-value">50%</span>
-            </div>
-
-            <div class="popup-need-bar">
-                <div id="popup-cleanliness-bar"></div>
-            </div>
-        </div>
-
-        <div class="popup-need">
-            <div class="popup-need-header">
-                <span>Hunger</span>
-                <span id="popup-hunger-value">50%</span>
-            </div>
-
-            <div class="popup-need-bar">
-                <div id="popup-hunger-bar"></div>
-            </div>
-        </div>
-
-        <div class="popup-need">
-            <div class="popup-need-header">
-                <span>Energy</span>
-                <span id="popup-energy-value">50%</span>
-            </div>
-
-            <div class="popup-need-bar">
-                <div id="popup-energy-bar"></div>
-            </div>
-        </div>
-
-        <div class="popup-need">
-            <div class="popup-need-header">
-                <span>Fun</span>
-                <span id="popup-fun-value">50%</span>
-            </div>
-
-            <div class="popup-need-bar">
-                <div id="popup-fun-bar"></div>
-            </div>
-        </div>
-
-        <div class="popup-need">
-            <div class="popup-need-header">
-                <span>Social</span>
-                <span id="popup-social-value">50%</span>
-            </div>
-
-            <div class="popup-need-bar">
-                <div id="popup-social-bar"></div>
-            </div>
-        </div>
-
-        <div class="popup-need">
-            <div class="popup-need-header">
-                <span>Environment</span>
-                <span id="popup-environment-value">50%</span>
-            </div>
-
-            <div class="popup-need-bar">
-                <div id="popup-environment-bar"></div>
-            </div>
-        </div>
-
-    </div>
-
-</div>
-
-<button
-    type="button"
-    class="needs-popup-open"
-    id="needs-popup-open"
-    aria-label="Open Needs panel"
->
-    <span class="needs-popup-open-icon">☾</span>
-    <span>Needs</span>
-</button>
-
-
-        <!-- HOME -->
-
-        <section class="page active" id="page-home">
+        <section
+            class="page active"
+            id="page-home"
+        >
 
             <section class="needs-section">
 
                 <div class="section-heading">
+
                     <h2>Needs</h2>
-                    <span id="mood">Feeling Neutral</span>
+
+                    <span id="mood">
+                        Feeling Neutral
+                    </span>
+
                 </div>
+
 
                 <div class="needs-grid">
 
-                    <div class="need"
-                        data-description="How clean and fresh your space feels. Cleaning, tidying, and maintaining your home help keep this need up.">
+                    <!-- CLEANLINESS -->
+
+                    <div
+                        class="need"
+                        data-description="How clean and fresh your space feels. Cleaning, tidying, and maintaining your home help keep this need up."
+                    >
 
                         <div class="need-header">
+
                             <span>Cleanliness</span>
-                            <span id="cleanliness-value">75%</span>
+
+                            <span>
+
+                                <span
+                                    id="cleanliness-state"
+                                    class="need-state"
+                                ></span>
+
+                                <span id="cleanliness-value">
+                                    50%
+                                </span>
+
+                            </span>
+
                         </div>
 
                         <div class="need-bar">
@@ -194,12 +318,30 @@
                     </div>
 
 
-                    <div class="need"
-                        data-description="How physically nourished and cared for you are. Food and hydration help keep this need up.">
+                    <!-- HUNGER -->
+
+                    <div
+                        class="need"
+                        data-description="How physically nourished and cared for you are. Food and hydration help keep this need up."
+                    >
 
                         <div class="need-header">
+
                             <span>Hunger</span>
-                            <span id="hunger-value">70%</span>
+
+                            <span>
+
+                                <span
+                                    id="hunger-state"
+                                    class="need-state"
+                                ></span>
+
+                                <span id="hunger-value">
+                                    70%
+                                </span>
+
+                            </span>
+
                         </div>
 
                         <div class="need-bar">
@@ -209,12 +351,30 @@
                     </div>
 
 
-                    <div class="need"
-                        data-description="How rested and physically restored you feel. Sleep, rest, and restorative activities help keep this need up.">
+                    <!-- ENERGY -->
+
+                    <div
+                        class="need"
+                        data-description="How rested and physically restored you feel. Sleep, rest, and restorative activities help keep this need up."
+                    >
 
                         <div class="need-header">
+
                             <span>Energy</span>
-                            <span id="energy-value">80%</span>
+
+                            <span>
+
+                                <span
+                                    id="energy-state"
+                                    class="need-state"
+                                ></span>
+
+                                <span id="energy-value">
+                                    80%
+                                </span>
+
+                            </span>
+
                         </div>
 
                         <div class="need-bar">
@@ -224,12 +384,30 @@
                     </div>
 
 
-                    <div class="need"
-                        data-description="How entertained, creatively fulfilled, and genuinely engaged you feel with your life.">
+                    <!-- FUN -->
+
+                    <div
+                        class="need"
+                        data-description="How entertained, creatively fulfilled, and genuinely engaged you feel with your life."
+                    >
 
                         <div class="need-header">
+
                             <span>Fun</span>
-                            <span id="fun-value">60%</span>
+
+                            <span>
+
+                                <span
+                                    id="fun-state"
+                                    class="need-state"
+                                ></span>
+
+                                <span id="fun-value">
+                                    60%
+                                </span>
+
+                            </span>
+
                         </div>
 
                         <div class="need-bar">
@@ -239,12 +417,30 @@
                     </div>
 
 
-                    <div class="need"
-                        data-description="How connected and socially fulfilled you feel. Time with people, communication, and meaningful connection help keep this need up.">
+                    <!-- SOCIAL -->
+
+                    <div
+                        class="need"
+                        data-description="How connected and socially fulfilled you feel. Time with people, communication, and meaningful connection help keep this need up."
+                    >
 
                         <div class="need-header">
+
                             <span>Social</span>
-                            <span id="social-value">65%</span>
+
+                            <span>
+
+                                <span
+                                    id="social-state"
+                                    class="need-state"
+                                ></span>
+
+                                <span id="social-value">
+                                    65%
+                                </span>
+
+                            </span>
+
                         </div>
 
                         <div class="need-bar">
@@ -254,12 +450,30 @@
                     </div>
 
 
-                    <div class="need"
-                        data-description="How pleasant, organized, comfortable, and peaceful your surroundings feel.">
+                    <!-- ENVIRONMENT -->
+
+                    <div
+                        class="need"
+                        data-description="How pleasant, organized, comfortable, and peaceful your surroundings feel."
+                    >
 
                         <div class="need-header">
+
                             <span>Environment</span>
-                            <span id="environment-value">72%</span>
+
+                            <span>
+
+                                <span
+                                    id="environment-state"
+                                    class="need-state"
+                                ></span>
+
+                                <span id="environment-value">
+                                    72%
+                                </span>
+
+                            </span>
+
                         </div>
 
                         <div class="need-bar">
@@ -273,13 +487,22 @@
             </section>
 
 
+            <!-- TODAY'S TASKS -->
+
             <section class="overview-section">
 
                 <div class="section-heading">
+
                     <div>
+
                         <h2>Today's Tasks</h2>
-                        <p id="task-progress">0 / 0 complete</p>
+
+                        <p id="task-progress">
+                            0 / 0 complete
+                        </p>
+
                     </div>
+
                 </div>
 
                 <div id="task-list"></div>
@@ -289,13 +512,23 @@
         </section>
 
 
-        <!-- CLEANING -->
+        <!-- =========================
+             CLEANING
+             ========================= -->
 
-        <section class="page" id="page-cleaning">
+        <section
+            class="page"
+            id="page-cleaning"
+        >
 
             <div class="page-heading">
+
                 <h2>Cleaning</h2>
-                <p>Keep your apartment clean, organized, and comfortable.</p>
+
+                <p>
+                    Keep your apartment clean, organized, and comfortable.
+                </p>
+
             </div>
 
             <div id="cleaning-task-list"></div>
@@ -305,61 +538,146 @@
         </section>
 
 
-        <!-- HUNGER -->
+        <!-- =========================
+             HUNGER
+             ========================= -->
 
-        <section class="page" id="page-hunger">
+        <section
+            class="page"
+            id="page-hunger"
+        >
 
             <div class="page-heading">
+
                 <h2>Hunger</h2>
-                <p>Take care of yourself and keep yourself nourished.</p>
+
+                <p>
+                    Take care of yourself and keep yourself nourished.
+                </p>
+
             </div>
 
-            <div class="action-grid" id="hunger-actions"></div>
+            <div
+                class="action-grid"
+                id="hunger-actions"
+            ></div>
 
         </section>
 
 
-        <!-- ENERGY -->
+        <!-- =========================
+             ENERGY
+             ========================= -->
 
-        <section class="page" id="page-energy">
+        <section
+            class="page"
+            id="page-energy"
+        >
 
             <div class="page-heading">
+
                 <h2>Energy</h2>
-                <p>Rest, restore, reset, and take care of yourself.</p>
+
+                <p>
+                    Rest, restore, reset, and take care of yourself.
+                </p>
+
             </div>
 
-            <div class="action-grid" id="energy-actions"></div>
+            <div
+                class="action-grid"
+                id="energy-actions"
+            ></div>
 
         </section>
 
 
-        <!-- FUN -->
+        <!-- =========================
+             FUN
+             ========================= -->
 
-        <section class="page" id="page-fun">
+        <section
+            class="page"
+            id="page-fun"
+        >
 
             <div class="page-heading">
+
                 <h2>Fun</h2>
-                <p>Do things that make you feel engaged, creative, and alive.</p>
+
+                <p>
+                    Do things that make you feel engaged, creative, and alive.
+                </p>
+
             </div>
 
-            <div class="action-grid" id="fun-actions"></div>
+            <div
+                class="action-grid"
+                id="fun-actions"
+            ></div>
 
         </section>
 
 
-        <!-- SOCIAL -->
+        <!-- =========================
+             SOCIAL
+             ========================= -->
 
-        <section class="page" id="page-social">
+        <section
+            class="page"
+            id="page-social"
+        >
 
             <div class="page-heading">
+
                 <h2>Social</h2>
-                <p>Stay connected with the people and community around you.</p>
+
+                <p>
+                    Stay connected with the people and community around you.
+                </p>
+
             </div>
 
-            <div class="action-grid" id="social-actions"></div>
+            <div
+                class="action-grid"
+                id="social-actions"
+            ></div>
 
         </section>
 
+
+        <!-- =========================
+             ACHIEVEMENTS
+             ========================= -->
+
+        <section
+            class="page"
+            id="page-achievements"
+        >
+
+            <div class="page-heading">
+
+                <h2>Achievements</h2>
+
+                <p>
+                    Little milestones for taking care of yourself and your home.
+                </p>
+
+            </div>
+
+
+            <div class="achievements-summary">
+
+                <span id="achievements-unlocked-count">
+                    0 / 10 Unlocked
+                </span>
+
+            </div>
+
+
+            <div id="achievements-list"></div>
+
+        </section>
 
     </main>
 
@@ -367,5 +685,5 @@
     <script src="js/app.js"></script>
 
 </body>
+
 </html>
-```

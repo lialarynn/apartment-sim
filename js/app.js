@@ -2,17 +2,19 @@
 // GAME STATE
 // =========================
 
-const savedGameState =
-    JSON.parse(
+let savedGameState = null;
+
+try {
+    savedGameState = JSON.parse(
         localStorage.getItem("apartmentSimGameState")
     );
+} catch (error) {
+    console.warn("Could not load saved game state.", error);
+}
 
 const gameState = savedGameState || {
-
     level: 1,
-
     xp: 0,
-
     needs: {
         cleanliness: 50,
         hunger: 50,
@@ -21,34 +23,41 @@ const gameState = savedGameState || {
         social: 50,
         environment: 50
     },
-
     lastNeedsUpdate: Date.now()
-
 };
 
 Object.keys(gameState.needs).forEach(need => {
-
     if (!Number.isFinite(gameState.needs[need])) {
         gameState.needs[need] = 50;
     }
-
 });
 
 if (!gameState.lastNeedsUpdate) {
     gameState.lastNeedsUpdate = Date.now();
 }
 
-
 const NEED_DECAY_PER_HOUR = {
-
     cleanliness: 2,
     hunger: 3,
     energy: 2,
     fun: 1,
     social: 1,
     environment: 1
-
 };
+
+
+// =========================
+// DOM ELEMENTS
+// =========================
+
+const needsPopup =
+    document.getElementById("needs-popup");
+
+const needsPopupOpen =
+    document.getElementById("needs-popup-open");
+
+const needsPopupToggle =
+    document.getElementById("needs-popup-toggle");
 
 
 // =========================
@@ -480,9 +489,6 @@ const needsActions = {
             }
         },
 
-
-        // Gentle reset
-
         {
             name: "Meditate",
             effects: {
@@ -525,9 +531,6 @@ const needsActions = {
             }
         },
 
-
-        // Getting yourself together
-
         {
             name: "Get ready for the day",
             effects: {
@@ -555,9 +558,6 @@ const needsActions = {
                 energy: 10
             }
         },
-
-
-        // Spiritual
 
         {
             name: "Tarot",
@@ -593,9 +593,6 @@ const needsActions = {
                 energy: 20
             }
         },
-
-
-        // Quiet pleasures
 
         {
             name: "Read for pleasure",
@@ -651,8 +648,6 @@ const needsActions = {
 
     fun: [
 
-        // Games
-
         {
             name: "Play a game",
             effects: {
@@ -687,9 +682,6 @@ const needsActions = {
                 fun: 5
             }
         },
-
-
-        // Creative
 
         {
             name: "Draw",
@@ -768,9 +760,6 @@ const needsActions = {
             }
         },
 
-
-        // Reading
-
         {
             name: "Read for pleasure",
             effects: {
@@ -791,9 +780,6 @@ const needsActions = {
                 fun: 10
             }
         },
-
-
-        // Romanticizing
 
         {
             name: "Get dressed just because",
@@ -850,9 +836,6 @@ const needsActions = {
                 fun: 25
             }
         },
-
-
-        // Little pleasures
 
         {
             name: "Listen to an album",
@@ -915,8 +898,6 @@ const needsActions = {
 
     social: [
 
-        // People
-
         {
             name: "Spend time with a friend",
             effects: {
@@ -972,9 +953,6 @@ const needsActions = {
                 social: 10
             }
         },
-
-
-        // Going out
 
         {
             name: "Go out with friends",
@@ -1039,9 +1017,6 @@ const needsActions = {
             }
         },
 
-
-        // Low-key
-
         {
             name: "Sit and talk with someone",
             effects: {
@@ -1105,9 +1080,6 @@ const needsActions = {
             }
         },
 
-
-        // Community
-
         {
             name: "Meet someone new",
             effects: {
@@ -1149,9 +1121,6 @@ const needsActions = {
                 social: 15
             }
         },
-
-
-        // Digital
 
         {
             name: "Text a friend",
@@ -1199,770 +1168,10 @@ const needsActions = {
 
 };
 
-// =========================
-// DATE UTILITIES
-// =========================
-
-function getToday() {
-
-    const now = new Date();
-
-    const year = now.getFullYear();
-    const month =
-        String(now.getMonth() + 1).padStart(2, "0");
-    const day =
-        String(now.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-}
-
-
-function parseDate(dateString) {
-
-    const [year, month, day] =
-        dateString.split("-").map(Number);
-
-    return new Date(year, month - 1, day);
-}
-
-
-function daysBetween(startDate, endDate) {
-
-    const start = parseDate(startDate);
-    const end = parseDate(endDate);
-
-    const difference =
-        end.getTime() - start.getTime();
-
-    return Math.floor(
-        difference / (1000 * 60 * 60 * 24)
-    );
-}
-
 
 // =========================
-// TASK SCHEDULE
+// ACTION CATEGORIES
 // =========================
-
-function getTaskDueDate(task) {
-
-    const recurrence = task.recurrence;
-    const recurrenceState = getRecurrenceState();
-
-    const lastCompleted =
-        recurrenceState[task.id];
-
-    // If completed before, the next occurrence
-    // is based on the completion date.
-
-    if (lastCompleted) {
-
-        const lastDate =
-            parseDate(lastCompleted);
-
-        if (recurrence.type === "daily") {
-
-            lastDate.setDate(
-                lastDate.getDate() + 1
-            );
-
-            return formatDate(lastDate);
-        }
-
-        if (recurrence.type === "weekly") {
-
-            lastDate.setDate(
-                lastDate.getDate() + 7
-            );
-
-            return formatDate(lastDate);
-        }
-
-        if (recurrence.type === "interval") {
-
-            lastDate.setDate(
-                lastDate.getDate() +
-                recurrence.days
-            );
-
-            return formatDate(lastDate);
-        }
-    }
-
-
-    // First occurrence
-
-    const startDate =
-        parseDate(START_DATE);
-
-    if (recurrence.type === "daily") {
-        return START_DATE;
-    }
-
-    if (recurrence.type === "weekly") {
-
-        while (startDate.getDay() !== 3) {
-
-            startDate.setDate(
-                startDate.getDate() + 1
-            );
-        }
-
-        return formatDate(startDate);
-    }
-
-    if (recurrence.type === "interval") {
-        return START_DATE;
-    }
-
-    return null;
-}
-
-
-function isTaskDue(task, dateString) {
-
-    const recurrence = task.recurrence;
-    const recurrenceState = getRecurrenceState();
-
-    const lastCompleted =
-        recurrenceState[task.id];
-
-
-    // If this task has been completed before,
-    // calculate its next occurrence from that date.
-
-    if (lastCompleted) {
-
-        const daysSinceCompletion =
-            daysBetween(
-                lastCompleted,
-                dateString
-            );
-
-
-        // Daily
-
-        if (recurrence.type === "daily") {
-
-            return (
-                daysSinceCompletion >= 1
-            );
-        }
-
-
-        // Weekly
-
-        if (recurrence.type === "weekly") {
-
-            return (
-                daysSinceCompletion >= 7
-            );
-        }
-
-
-        // Interval
-
-        if (recurrence.type === "interval") {
-
-            return (
-                daysSinceCompletion >=
-                recurrence.days
-            );
-        }
-
-        return false;
-    }
-
-
-    // If the task has NEVER been completed,
-    // use its original schedule.
-
-    const daysSinceStart =
-        daysBetween(
-            START_DATE,
-            dateString
-        );
-
-
-    // Daily
-
-    if (recurrence.type === "daily") {
-        return true;
-    }
-
-
-    // Weekly — Wednesday
-
-    if (recurrence.type === "weekly") {
-
-        const date =
-            parseDate(dateString);
-
-        // 0 = Sunday
-        // 1 = Monday
-        // 2 = Tuesday
-        // 3 = Wednesday
-
-        return (
-            daysSinceStart >= 0 &&
-            date.getDay() === 3
-        );
-    }
-
-
-    // Interval
-
-    if (recurrence.type === "interval") {
-
-        return (
-            daysSinceStart >= 0 &&
-            daysSinceStart %
-                recurrence.days === 0
-        );
-    }
-
-    return false;
-}
-
-
-// =========================
-// GET TODAY'S TASKS
-// =========================
-
-function getTodaysTasks() {
-
-    const today =
-        getToday();
-
-    const yesterday =
-        getPreviousDate(today);
-
-    return taskDefinitions.filter(task => {
-
-        const dueToday =
-            isTaskDue(
-                task,
-                today
-            );
-
-        const dueYesterday =
-            isTaskDue(
-                task,
-                yesterday
-            );
-
-        const completedToday =
-            isCompletedToday(
-                task.id
-            );
-
-        const completedYesterday =
-            isCompletedOnDate(
-                task.id,
-                yesterday
-            );
-
-        const unfinishedYesterday =
-            dueYesterday &&
-            !completedYesterday;
-
-        return (
-            (dueToday && !completedToday) ||
-            unfinishedYesterday ||
-            completedToday
-        );
-    });
-}
-
-
-// =========================
-// COMPLETION STORAGE
-// =========================
-
-function getCompletedTasks() {
-
-    const saved =
-        localStorage.getItem(
-            "apartmentSimCompletions"
-        );
-
-    if (!saved) {
-        return {};
-    }
-
-    try {
-
-        return JSON.parse(saved);
-
-    } catch {
-
-        return {};
-    }
-}
-
-
-function saveCompletedTasks(completions) {
-
-    localStorage.setItem(
-        "apartmentSimCompletions",
-        JSON.stringify(completions)
-    );
-}
-
-
-function getRecurrenceState() {
-
-    const saved =
-        localStorage.getItem(
-            "apartmentSimRecurrence"
-        );
-
-    if (!saved) {
-        return {};
-    }
-
-    try {
-
-        return JSON.parse(saved);
-
-    } catch {
-
-        return {};
-    }
-}
-
-
-function saveRecurrenceState(state) {
-
-    localStorage.setItem(
-        "apartmentSimRecurrence",
-        JSON.stringify(state)
-    );
-}
-
-
-// =========================
-// TODAY'S COMPLETIONS
-// =========================
-
-function getPreviousDate(dateString) {
-
-    const date =
-        parseDate(dateString);
-
-    date.setDate(
-        date.getDate() - 1
-    );
-
-    const year =
-        date.getFullYear();
-
-    const month =
-        String(
-            date.getMonth() + 1
-        ).padStart(2, "0");
-
-    const day =
-        String(
-            date.getDate()
-        ).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-}
-
-
-function isCompletedOnDate(
-    taskId,
-    dateString
-) {
-
-    const completions =
-        getCompletedTasks();
-
-    if (!completions[dateString]) {
-        return false;
-    }
-
-    return completions[
-        dateString
-    ].includes(taskId);
-}
-
-
-function isCompletedToday(taskId) {
-
-    const today =
-        getToday();
-
-    const completions =
-        getCompletedTasks();
-
-    return Boolean(
-        completions[today]?.includes(taskId)
-    );
-}
-
-
-// =========================
-// COMPLETE TASK
-// =========================
-
-function completeTask(taskId) {
-
-    const today =
-        getToday();
-
-    const completions =
-        getCompletedTasks();
-
-    const recurrenceState =
-        getRecurrenceState();
-
-
-    if (!completions[today]) {
-
-        completions[today] = [];
-    }
-
-
-    const task =
-        taskDefinitions.find(
-            task => task.id === taskId
-        );
-
-
-    if (!task) {
-        return;
-    }
-
-
-    const alreadyCompleted =
-        completions[today].includes(
-            taskId
-        );
-
-
-    if (alreadyCompleted) {
-
-        completions[today] =
-            completions[today].filter(
-                id => id !== taskId
-            );
-
-        removeXP(task.xp);
-
-        changeNeeds(
-            task.needs,
-            -1
-        );
-
-
-        // Remove today's completion
-        // as the recurrence anchor
-
-        if (
-            recurrenceState[taskId] ===
-            today
-        ) {
-
-            delete recurrenceState[
-                taskId
-            ];
-        }
-
-    } else {
-
-        completions[today].push(
-            taskId
-        );
-
-        addXP(task.xp);
-
-        changeNeeds(
-            task.needs,
-            1
-        );
-
-        showTaskFeedback(task);
-
-
-        // Remember the actual date
-        // this task was completed
-
-        recurrenceState[taskId] =
-            today;
-    }
-
-
-    saveCompletedTasks(
-        completions
-    );
-
-    saveRecurrenceState(
-        recurrenceState
-    );
-
-    renderTasks();
-}
-
-
-function showTaskFeedback(task) {
-
-    const feedback =
-        document.createElement("div");
-
-    feedback.className =
-        "task-feedback";
-
-
-    let message =
-        `+${task.xp} XP`;
-
-
-    if (task.needs) {
-
-        Object.entries(
-            task.needs
-        ).forEach(
-            ([need, amount]) => {
-
-                const formattedNeed =
-                    need.charAt(0).toUpperCase() +
-                    need.slice(1);
-
-                message +=
-                    ` • +${amount} ${formattedNeed}`;
-            }
-        );
-    }
-
-
-    feedback.textContent =
-        message;
-
-    document.body.appendChild(
-        feedback
-    );
-
-
-    setTimeout(() => {
-
-        feedback.remove();
-
-    }, 2500);
-}
-
-
-function removeXP(amount) {
-
-    gameState.xp -= amount;
-
-
-    // If XP goes below zero,
-    // move back down a level.
-
-    while (
-        gameState.xp < 0 &&
-        gameState.level > 1
-    ) {
-
-        gameState.level--;
-
-        gameState.xp += 100;
-    }
-
-
-    // Never allow negative XP
-    // at level 1
-
-    if (
-        gameState.level === 1 &&
-        gameState.xp < 0
-    ) {
-
-        gameState.xp = 0;
-    }
-
-
-    updateXPDisplay();
-
-    saveGameState();
-}
-
-
-function changeNeeds(
-    changes,
-    multiplier
-) {
-
-    if (!changes) {
-        return;
-    }
-
-
-    if (
-        changes.cleanliness !==
-        undefined
-    ) {
-
-        gameState.needs.cleanliness +=
-            changes.cleanliness *
-            multiplier;
-    }
-
-
-    if (
-        changes.environment !==
-        undefined
-    ) {
-
-        gameState.needs.environment +=
-            changes.environment *
-            multiplier;
-    }
-
-
-    gameState.needs.cleanliness =
-        Math.max(
-            0,
-            Math.min(
-                100,
-                gameState.needs.cleanliness
-            )
-        );
-
-
-    gameState.needs.environment =
-        Math.max(
-            0,
-            Math.min(
-                100,
-                gameState.needs.environment
-            )
-        );
-
-
-    saveGameState();
-
-    updateNeeds();
-
-    updateMood();
-}
-
-
-// =========================
-// NEED ACTIONS
-// =========================
-
-function performNeedAction(action) {
-
-    updateNeedsFromTime();
-
-
-    Object.entries(
-        action.effects
-    ).forEach(
-        ([need, amount]) => {
-
-            if (
-                gameState.needs[need] ===
-                undefined
-            ) {
-
-                return;
-            }
-
-
-            gameState.needs[need] +=
-                amount;
-
-
-            gameState.needs[need] =
-                Math.max(
-                    0,
-                    Math.min(
-                        100,
-                        gameState.needs[need]
-                    )
-                );
-        }
-    );
-
-
-    saveGameState();
-
-    updateNeeds();
-
-    updateMood();
-
-    showNeedActionFeedback(
-        action
-    );
-}
-
-
-function showNeedActionFeedback(
-    action
-) {
-
-    const feedback =
-        document.createElement("div");
-
-    feedback.className =
-        "task-feedback";
-
-
-    const effects =
-        Object.entries(
-            action.effects
-        )
-        .map(
-            ([need, amount]) => {
-
-                const formattedNeed =
-                    need.charAt(0).toUpperCase() +
-                    need.slice(1);
-
-                return (
-                    `+${amount} ${formattedNeed}`
-                );
-            }
-        )
-        .join(" • ");
-
-
-    feedback.textContent =
-        effects;
-
-    document.body.appendChild(
-        feedback
-    );
-
-
-    setTimeout(() => {
-
-        feedback.remove();
-
-    }, 2500);
-}
-
-
-function renderNeedActions(need) {
-
-    const container =
-        document.getElementById(`${need}-actions`);
-
-    if (!container) {
-        return;
-    }
-
-    container.innerHTML = "";
-
-    const actions = needsActions[need];
-
-    if (!actions) {
-        return;
-    }
 
 const categoryMap = {
 
@@ -2015,60 +1224,60 @@ const categoryMap = {
 
     social: {
 
-    "People": [
-        "Spend time with a friend",
-        "Hang out with family",
-        "Spend time with someone I'm dating",
-        "Have a meaningful conversation",
-        "Call someone",
-        "FaceTime someone",
-        "Text someone I care about",
-        "Check in on someone"
-    ],
+        "People": [
+            "Spend time with a friend",
+            "Hang out with family",
+            "Spend time with someone I'm dating",
+            "Have a meaningful conversation",
+            "Call someone",
+            "FaceTime someone",
+            "Text someone I care about",
+            "Check in on someone"
+        ],
 
-    "Going Out": [
-        "Go out with friends",
-        "Go out to eat with someone",
-        "Get coffee with someone",
-        "Go shopping with someone",
-        "Go to a bar / social place",
-        "Go to an event",
-        "Go somewhere with someone I've never been before",
-        "Have a double date",
-        "Have a girls' night"
-    ],
+        "Going Out": [
+            "Go out with friends",
+            "Go out to eat with someone",
+            "Get coffee with someone",
+            "Go shopping with someone",
+            "Go to a bar / social place",
+            "Go to an event",
+            "Go somewhere with someone I've never been before",
+            "Have a double date",
+            "Have a girls' night"
+        ],
 
-    "Low-Key": [
-        "Sit and talk with someone",
-        "Watch something with someone",
-        "Cook with someone",
-        "Eat a meal with someone",
-        "Run errands with someone",
-        "Go for a walk with someone",
-        "Play a game with someone",
-        "Hang out at someone's home",
-        "Invite someone over"
-    ],
+        "Low-Key": [
+            "Sit and talk with someone",
+            "Watch something with someone",
+            "Cook with someone",
+            "Eat a meal with someone",
+            "Run errands with someone",
+            "Go for a walk with someone",
+            "Play a game with someone",
+            "Hang out at someone's home",
+            "Invite someone over"
+        ],
 
-    "Community": [
-        "Meet someone new",
-        "Talk to someone new",
-        "Go somewhere social by myself",
-        "Attend a class / group",
-        "Go to a local event",
-        "Spend time in a social environment"
-    ],
+        "Community": [
+            "Meet someone new",
+            "Talk to someone new",
+            "Go somewhere social by myself",
+            "Attend a class / group",
+            "Go to a local event",
+            "Spend time in a social environment"
+        ],
 
-    "Digital": [
-        "Text a friend",
-        "Send someone a funny video",
-        "Respond to messages",
-        "Voice message someone",
-        "Call someone I haven't talked to recently",
-        "Catch up with someone online"
-    ]
+        "Digital": [
+            "Text a friend",
+            "Send someone a funny video",
+            "Respond to messages",
+            "Voice message someone",
+            "Call someone I haven't talked to recently",
+            "Catch up with someone online"
+        ]
 
-},
+    },
 
     fun: {
 
@@ -2126,11 +1335,1442 @@ const categoryMap = {
 
 };
 
+
+// =========================
+// DATE UTILITIES
+// =========================
+
+function getToday() {
+
+    const now = new Date();
+
+    const year =
+        now.getFullYear();
+
+    const month =
+        String(now.getMonth() + 1)
+            .padStart(2, "0");
+
+    const day =
+        String(now.getDate())
+            .padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+}
+
+
+function parseDate(dateString) {
+
+    const [year, month, day] =
+        dateString.split("-").map(Number);
+
+    return new Date(
+        year,
+        month - 1,
+        day
+    );
+}
+
+
+function formatDate(date) {
+
+    const year =
+        date.getFullYear();
+
+    const month =
+        String(date.getMonth() + 1)
+            .padStart(2, "0");
+
+    const day =
+        String(date.getDate())
+            .padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+}
+
+
+function daysBetween(startDate, endDate) {
+
+    const start =
+        parseDate(startDate);
+
+    const end =
+        parseDate(endDate);
+
+    const difference =
+        end.getTime() -
+        start.getTime();
+
+    return Math.floor(
+        difference /
+        (1000 * 60 * 60 * 24)
+    );
+}
+
+
+function getPreviousDate(dateString) {
+
+    const date =
+        parseDate(dateString);
+
+    date.setDate(
+        date.getDate() - 1
+    );
+
+    return formatDate(date);
+}
+
+
+// =========================
+// COMPLETION STORAGE
+// =========================
+
+function getCompletedTasks() {
+
+    const saved =
+        localStorage.getItem(
+            "apartmentSimCompletions"
+        );
+
+    if (!saved) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(saved);
+    } catch {
+        return {};
+    }
+}
+
+
+function saveCompletedTasks(completions) {
+
+    localStorage.setItem(
+        "apartmentSimCompletions",
+        JSON.stringify(completions)
+    );
+}
+
+
+function getRecurrenceState() {
+
+    const saved =
+        localStorage.getItem(
+            "apartmentSimRecurrence"
+        );
+
+    if (!saved) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(saved);
+    } catch {
+        return {};
+    }
+}
+
+
+function saveRecurrenceState(state) {
+
+    localStorage.setItem(
+        "apartmentSimRecurrence",
+        JSON.stringify(state)
+    );
+}
+
+
+// =========================
+// TASK SCHEDULE
+// =========================
+
+function getTaskDueDate(task) {
+
+    const recurrence =
+        task.recurrence;
+
+    const recurrenceState =
+        getRecurrenceState();
+
+    const lastCompleted =
+        recurrenceState[task.id];
+
+    if (lastCompleted) {
+
+        const lastDate =
+            parseDate(lastCompleted);
+
+        if (recurrence.type === "daily") {
+            lastDate.setDate(
+                lastDate.getDate() + 1
+            );
+
+            return formatDate(lastDate);
+        }
+
+        if (recurrence.type === "weekly") {
+            lastDate.setDate(
+                lastDate.getDate() + 7
+            );
+
+            return formatDate(lastDate);
+        }
+
+        if (recurrence.type === "interval") {
+            lastDate.setDate(
+                lastDate.getDate() +
+                recurrence.days
+            );
+
+            return formatDate(lastDate);
+        }
+    }
+
+    if (recurrence.type === "daily") {
+        return START_DATE;
+    }
+
+    if (recurrence.type === "weekly") {
+        return START_DATE;
+    }
+
+    if (recurrence.type === "interval") {
+        return START_DATE;
+    }
+
+    return null;
+}
+
+
+function isTaskDue(task, dateString) {
+
+    const recurrence =
+        task.recurrence;
+
+    const recurrenceState =
+        getRecurrenceState();
+
+    const lastCompleted =
+        recurrenceState[task.id];
+
+    if (lastCompleted) {
+
+        const daysSinceCompletion =
+            daysBetween(
+                lastCompleted,
+                dateString
+            );
+
+        if (recurrence.type === "daily") {
+            return daysSinceCompletion >= 1;
+        }
+
+        if (recurrence.type === "weekly") {
+            return daysSinceCompletion >= 7;
+        }
+
+        if (recurrence.type === "interval") {
+            return (
+                daysSinceCompletion >=
+                recurrence.days
+            );
+        }
+
+        return false;
+    }
+
+    const daysSinceStart =
+        daysBetween(
+            START_DATE,
+            dateString
+        );
+
+    if (daysSinceStart < 0) {
+        return false;
+    }
+
+    if (recurrence.type === "daily") {
+        return true;
+    }
+
+    if (recurrence.type === "weekly") {
+
+        const date =
+            parseDate(dateString);
+
+        return date.getDay() === 3;
+    }
+
+    if (recurrence.type === "interval") {
+
+        return (
+            daysSinceStart %
+            recurrence.days === 0
+        );
+    }
+
+    return false;
+}
+
+
+// =========================
+// COMPLETION CHECKS
+// =========================
+
+function isCompletedOnDate(
+    taskId,
+    dateString
+) {
+
+    const completions =
+        getCompletedTasks();
+
+    if (!completions[dateString]) {
+        return false;
+    }
+
+    return completions[
+        dateString
+    ].includes(taskId);
+}
+
+
+function isCompletedToday(taskId) {
+
+    return isCompletedOnDate(
+        taskId,
+        getToday()
+    );
+}
+
+
+// =========================
+// GET TODAY'S TASKS
+// =========================
+
+function getTodaysTasks() {
+
+    const today =
+        getToday();
+
+    const yesterday =
+        getPreviousDate(today);
+
+    return taskDefinitions.filter(task => {
+
+        const dueToday =
+            isTaskDue(
+                task,
+                today
+            );
+
+        const dueYesterday =
+            isTaskDue(
+                task,
+                yesterday
+            );
+
+        const completedToday =
+            isCompletedToday(
+                task.id
+            );
+
+        const completedYesterday =
+            isCompletedOnDate(
+                task.id,
+                yesterday
+            );
+
+        const unfinishedYesterday =
+            dueYesterday &&
+            !completedYesterday;
+
+        return (
+            (dueToday && !completedToday) ||
+            unfinishedYesterday ||
+            completedToday
+        );
+    });
+}
+
+
+// =========================
+// SAVE GAME STATE
+// =========================
+
+function saveGameState() {
+
+    localStorage.setItem(
+        "apartmentSimGameState",
+        JSON.stringify(gameState)
+    );
+}
+
+// =========================
+// ACHIEVEMENTS
+// =========================
+
+const achievementDefinitions = [
+
+    {
+        id: "first-steps",
+        name: "First Steps",
+        description: "Complete your first task.",
+        requirement: () => getTotalCompletedTasks() >= 1
+    },
+
+    {
+        id: "clean-girl-era",
+        name: "Clean Girl Era",
+        description: "Complete 25 cleaning tasks.",
+        requirement: () => getTotalCompletedTasks() >= 25
+    },
+
+    {
+        id: "domestic-goddess",
+        name: "Domestic Goddess",
+        description: "Complete 100 cleaning tasks.",
+        requirement: () => getTotalCompletedTasks() >= 100
+    },
+
+    {
+        id: "getting-her-life-together",
+        name: "Getting Her Life Together",
+        description: "Reach Level 5.",
+        requirement: () => gameState.level >= 5
+    },
+
+    {
+        id: "well-rounded",
+        name: "Well Rounded",
+        description: "Get all six needs above 75%.",
+        requirement: () =>
+            Object.values(gameState.needs)
+                .every(value => value >= 75)
+    },
+
+    {
+        id: "feeling-great",
+        name: "Feeling Great",
+        description: "Reach the Feeling Great mood.",
+        requirement: () =>
+            getCurrentMood().name === "Feeling Great"
+    },
+
+    {
+        id: "homebody",
+        name: "Homebody",
+        description: "Complete every task due today.",
+        requirement: () => {
+
+            const tasks =
+                getTodaysTasks();
+
+            return (
+                tasks.length > 0 &&
+                tasks.every(task =>
+                    isCompletedToday(task.id)
+                )
+            );
+        }
+    },
+
+    {
+        id: "good-habits",
+        name: "Good Habits",
+        description: "Complete 7 daily cleaning tasks.",
+        requirement: () =>
+            getTotalDailyTaskCompletions() >= 7
+    },
+
+    {
+        id: "self-care",
+        name: "Self Care",
+        description: "Perform 10 need actions.",
+        requirement: () =>
+            getNeedActionCount() >= 10
+    },
+
+    {
+        id: "little-bit-of-everything",
+        name: "A Little Bit of Everything",
+        description: "Use an action from every need category.",
+        requirement: () =>
+            hasUsedEveryNeedCategory()
+    }
+
+];
+
+
+// =========================
+// ACHIEVEMENT STORAGE
+// =========================
+
+function getAchievementState() {
+
+    const saved =
+        localStorage.getItem(
+            "apartmentSimAchievements"
+        );
+
+    if (!saved) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(saved);
+    } catch {
+        return {};
+    }
+}
+
+
+function saveAchievementState(state) {
+
+    localStorage.setItem(
+        "apartmentSimAchievements",
+        JSON.stringify(state)
+    );
+}
+
+
+// =========================
+// ACHIEVEMENT TRACKING
+// =========================
+
+function getTotalCompletedTasks() {
+
+    const completions =
+        getCompletedTasks();
+
+    return Object.values(completions)
+        .reduce(
+            (total, tasks) =>
+                total + tasks.length,
+            0
+        );
+}
+
+
+function getTotalDailyTaskCompletions() {
+
+    const completions =
+        getCompletedTasks();
+
+    let count = 0;
+
+    Object.entries(completions)
+        .forEach(
+            ([date, taskIds]) => {
+
+                taskIds.forEach(taskId => {
+
+                    const task =
+                        taskDefinitions.find(
+                            task =>
+                                task.id === taskId
+                        );
+
+                    if (
+                        task &&
+                        task.recurrence.type ===
+                        "daily"
+                    ) {
+                        count++;
+                    }
+                });
+            }
+        );
+
+    return count;
+}
+
+
+function getNeedActionCount() {
+
+    return Number(
+        localStorage.getItem(
+            "apartmentSimNeedActionCount"
+        )
+    ) || 0;
+}
+
+
+function hasUsedEveryNeedCategory() {
+
+    const usedCategories =
+        JSON.parse(
+            localStorage.getItem(
+                "apartmentSimUsedNeedCategories"
+            ) || "[]"
+        );
+
+    return [
+        "hunger",
+        "energy",
+        "fun",
+        "social"
+    ].every(
+        need =>
+            usedCategories.includes(need)
+    );
+}
+
+
+function checkAchievements() {
+
+    const achievementState =
+        getAchievementState();
+
+    let unlockedSomething = false;
+
+    achievementDefinitions.forEach(
+        achievement => {
+
+            if (
+                achievementState[
+                    achievement.id
+                ]
+            ) {
+                return;
+            }
+
+            if (
+                achievement.requirement()
+            ) {
+
+                achievementState[
+                    achievement.id
+                ] = {
+                    unlockedAt:
+                        new Date().toISOString()
+                };
+
+                unlockedSomething = true;
+
+                showAchievementFeedback(
+                    achievement
+                );
+            }
+        }
+    );
+
+    if (unlockedSomething) {
+
+        saveAchievementState(
+            achievementState
+        );
+    }
+
+    renderAchievements();
+}
+
+
+function showAchievementFeedback(
+    achievement
+) {
+
+    const feedback =
+        document.createElement("div");
+
+    feedback.className =
+        "task-feedback achievement-feedback";
+
+    feedback.textContent =
+        `✦ Achievement Unlocked: ${achievement.name}`;
+
+    document.body.appendChild(
+        feedback
+    );
+
+    setTimeout(() => {
+
+        feedback.remove();
+
+    }, 3500);
+}
+
+function getAchievementProgress(achievement) {
+    const id = achievement.id;
+
+    switch (id) {
+        case "first-steps":
+            return {
+                current: Math.min(getTotalCompletedTasks(), 1),
+                target: 1
+            };
+
+        case "clean-girl-era":
+            return {
+                current: Math.min(getTotalCompletedTasks(), 25),
+                target: 25
+            };
+
+        case "domestic-goddess":
+            return {
+                current: Math.min(getTotalCompletedTasks(), 100),
+                target: 100
+            };
+
+        case "getting-her-life-together":
+            return {
+                current: Math.min(gameState.level, 5),
+                target: 5
+            };
+
+        case "well-rounded": {
+            const count = Object.values(gameState.needs)
+                .filter(value => value >= 75)
+                .length;
+
+            return {
+                current: count,
+                target: 6
+            };
+        }
+
+        case "self-care":
+            return {
+                current: Math.min(getNeedActionCount(), 10),
+                target: 10
+            };
+
+        default:
+            return null;
+    }
+
+}
+
+
+function renderAchievements() {
+
+    const container =
+        document.getElementById("achievements-list");
+
+    const countDisplay =
+        document.getElementById(
+            "achievements-unlocked-count"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    const achievementState =
+        getAchievementState();
+
+    const unlockedCount =
+        achievementDefinitions.filter(
+            achievement =>
+                achievementState[achievement.id]
+        ).length;
+
+    if (countDisplay) {
+        countDisplay.textContent =
+            `${unlockedCount} / ${achievementDefinitions.length} Unlocked`;
+    }
+
+    container.innerHTML = "";
+
+    achievementDefinitions.forEach(
+        achievement => {
+
+            const isUnlocked =
+                Boolean(
+                    achievementState[
+                        achievement.id
+                    ]
+                );
+
+            const card =
+                document.createElement("div");
+
+            card.className =
+                `achievement-card ${
+                    isUnlocked
+                        ? "achievement-unlocked"
+                        : "achievement-locked"
+                }`;
+
+            const progress =
+                getAchievementProgress(
+                    achievement
+                );
+
+            let progressHTML = "";
+
+            if (progress) {
+
+                const percentage =
+                    Math.min(
+                        (
+                            progress.current /
+                            progress.target
+                        ) * 100,
+                        100
+                    );
+
+                progressHTML = `
+                    <div class="achievement-progress">
+
+                        <div class="achievement-progress-bar">
+                            <div
+                                class="achievement-progress-fill"
+                                style="width: ${percentage}%"
+                            ></div>
+                        </div>
+
+                        <span>
+                            ${progress.current} / ${progress.target}
+                        </span>
+
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+
+                <div class="achievement-icon">
+                    ${
+                        isUnlocked
+                            ? "✧"
+                            : "◇"
+                    }
+                </div>
+
+                <div class="achievement-info">
+
+                    <h3>
+                        ${achievement.name}
+                    </h3>
+
+                    <p>
+                        ${achievement.description}
+                    </p>
+
+                    ${progressHTML}
+
+                    <span class="achievement-status">
+                        ${
+                            isUnlocked
+                                ? "✓ Unlocked"
+                                : "Locked"
+                        }
+                    </span>
+
+                </div>
+
+            `;
+
+            container.appendChild(card);
+        }
+    );
+}
+
+// =========================
+// XP SYSTEM
+// =========================
+
+function addXP(amount) {
+
+    gameState.xp += amount;
+
+    while (gameState.xp >= 100) {
+
+        gameState.xp -= 100;
+        gameState.level++;
+    }
+
+    updateXPDisplay();
+    saveGameState();
+    checkAchievements();
+}
+
+
+function removeXP(amount) {
+
+    gameState.xp -= amount;
+
+    while (
+        gameState.xp < 0 &&
+        gameState.level > 1
+    ) {
+
+        gameState.level--;
+        gameState.xp += 100;
+    }
+
+    if (
+        gameState.level === 1 &&
+        gameState.xp < 0
+    ) {
+        gameState.xp = 0;
+    }
+
+    updateXPDisplay();
+    saveGameState();
+}
+
+
+function updateXPDisplay() {
+
+    const level =
+        document.getElementById("level");
+
+    const xpText =
+        document.getElementById("xp-text");
+
+    const xpFill =
+        document.getElementById("xp-fill");
+
+    if (level) {
+        level.textContent =
+            gameState.level;
+    }
+
+    if (xpText) {
+        xpText.textContent =
+            `${gameState.xp} / 100 XP`;
+    }
+
+    if (xpFill) {
+        xpFill.style.width =
+            `${gameState.xp}%`;
+    }
+}
+
+
+// =========================
+// NEED DECAY
+// =========================
+
+function updateNeedsFromTime() {
+
+    const now =
+        Date.now();
+
+    const elapsedHours =
+        (
+            now -
+            gameState.lastNeedsUpdate
+        ) /
+        (1000 * 60 * 60);
+
+    if (elapsedHours <= 0) {
+        return;
+    }
+
+    Object.entries(
+        NEED_DECAY_PER_HOUR
+    ).forEach(
+        ([need, decayRate]) => {
+
+            if (
+                gameState.needs[need] ===
+                undefined
+            ) {
+                return;
+            }
+
+            gameState.needs[need] -=
+                decayRate *
+                elapsedHours;
+
+            gameState.needs[need] =
+                Math.max(
+                    0,
+                    Math.min(
+                        100,
+                        gameState.needs[need]
+                    )
+                );
+        }
+    );
+
+    gameState.lastNeedsUpdate =
+        now;
+
+    saveGameState();
+}
+
+
+// =========================
+// NEED STATES
+// =========================
+
+function getNeedState(need, value) {
+
+    if (value >= 80) {
+
+        const highStates = {
+            cleanliness: "Spotless",
+            hunger: "Well Fed",
+            energy: "Rested",
+            fun: "Entertained",
+            social: "Connected",
+            environment: "Peaceful"
+        };
+
+        return highStates[need];
+    }
+
+    if (value >= 60) {
+
+        const goodStates = {
+            cleanliness: "Clean",
+            hunger: "Satisfied",
+            energy: "Energized",
+            fun: "Having Fun",
+            social: "Socially Fulfilled",
+            environment: "Comfortable"
+        };
+
+        return goodStates[need];
+    }
+
+    if (value >= 40) {
+
+        const neutralStates = {
+            cleanliness: "Okay",
+            hunger: "Peckish",
+            energy: "Okay",
+            fun: "Amused",
+            social: "Connected Enough",
+            environment: "Fine"
+        };
+
+        return neutralStates[need];
+    }
+
+    if (value >= 20) {
+
+        const lowStates = {
+            cleanliness: "Grimy",
+            hunger: "Hungry",
+            energy: "Tired",
+            fun: "Bored",
+            social: "Lonely",
+            environment: "Uncomfortable"
+        };
+
+        return lowStates[need];
+    }
+
+    const criticalStates = {
+        cleanliness: "Filthy",
+        hunger: "Starving",
+        energy: "Exhausted",
+        fun: "Miserable",
+        social: "Desperate for Company",
+        environment: "Distressed"
+    };
+
+    return criticalStates[need];
+}
+
+
+// =========================
+// NEED DISPLAY
+// =========================
+
+function updateNeeds() {
+
+    Object.entries(
+        gameState.needs
+    ).forEach(
+        ([need, value]) => {
+
+            const bar =
+                document.getElementById(
+                    `${need}-bar`
+                );
+
+            const valueDisplay =
+                document.getElementById(
+                    `${need}-value`
+                );
+
+            const stateDisplay =
+                document.getElementById(
+                    `${need}-state`
+                );
+
+            if (bar) {
+                bar.style.width =
+                    `${value}%`;
+            }
+
+            if (valueDisplay) {
+                valueDisplay.textContent =
+                    Math.round(value) + "%";
+            }
+
+            if (stateDisplay) {
+                stateDisplay.textContent =
+                    getNeedState(
+                        need,
+                        value
+                    );
+            }
+
+            // Popup values
+
+            const popupBar =
+                document.getElementById(
+                    `popup-${need}-bar`
+                );
+
+            const popupValue =
+                document.getElementById(
+                    `popup-${need}-value`
+                );
+
+            if (popupBar) {
+                popupBar.style.width =
+                    `${value}%`;
+            }
+
+            if (popupValue) {
+                popupValue.textContent =
+                    Math.round(value) + "%";
+            }
+        }
+    );
+}
+
+
+// =========================
+// CHANGE NEEDS
+// =========================
+
+function changeNeeds(
+    changes,
+    multiplier
+) {
+
+    if (!changes) {
+        return;
+    }
+
+    Object.entries(changes)
+        .forEach(
+            ([need, amount]) => {
+
+                if (
+                    gameState.needs[need] ===
+                    undefined
+                ) {
+                    return;
+                }
+
+                gameState.needs[need] +=
+                    amount *
+                    multiplier;
+
+                gameState.needs[need] =
+                    Math.max(
+                        0,
+                        Math.min(
+                            100,
+                            gameState.needs[need]
+                        )
+                    );
+            }
+        );
+
+    saveGameState();
+
+    updateNeeds();
+    updateMood();
+}
+
+
+// =========================
+// COMPLETE TASK
+// =========================
+
+function completeTask(taskId) {
+
+    const today =
+        getToday();
+
+    const completions =
+        getCompletedTasks();
+
+    const recurrenceState =
+        getRecurrenceState();
+
+    if (!completions[today]) {
+        completions[today] = [];
+    }
+
+    const task =
+        taskDefinitions.find(
+            task => task.id === taskId
+        );
+
+    if (!task) {
+        return;
+    }
+
+    const alreadyCompleted =
+        completions[today].includes(
+            taskId
+        );
+
+    if (alreadyCompleted) {
+
+        completions[today] =
+            completions[today].filter(
+                id => id !== taskId
+            );
+
+        removeXP(task.xp);
+
+        changeNeeds(
+            task.needs,
+            -1
+        );
+
+        if (
+            recurrenceState[taskId] ===
+            today
+        ) {
+
+            delete recurrenceState[
+                taskId
+            ];
+        }
+
+    } else {
+
+        completions[today].push(
+            taskId
+        );
+
+        addXP(task.xp);
+
+        changeNeeds(
+            task.needs,
+            1
+        );
+
+        showTaskFeedback(task);
+
+        recurrenceState[taskId] =
+            today;
+    }
+
+    saveCompletedTasks(
+        completions
+    );
+
+    saveRecurrenceState(
+        recurrenceState
+    );
+
+    renderTasks();
+
+    checkAchievements();
+}
+
+
+// =========================
+// TASK FEEDBACK
+// =========================
+
+function showTaskFeedback(task) {
+
+    const feedback =
+        document.createElement("div");
+
+    feedback.className =
+        "task-feedback";
+
+    let message =
+        `+${task.xp} XP`;
+
+    if (task.needs) {
+
+        Object.entries(
+            task.needs
+        ).forEach(
+            ([need, amount]) => {
+
+                const formattedNeed =
+                    need.charAt(0).toUpperCase() +
+                    need.slice(1);
+
+                message +=
+                    ` • +${amount} ${formattedNeed}`;
+            }
+        );
+    }
+
+    feedback.textContent =
+        message;
+
+    document.body.appendChild(
+        feedback
+    );
+
+    setTimeout(() => {
+        feedback.remove();
+    }, 2500);
+}
+
+
+// =========================
+// NEED ACTIONS
+// =========================
+
+function performNeedAction(action) {
+
+    updateNeedsFromTime();
+
+        const actionCount =
+        getNeedActionCount() + 1;
+
+    localStorage.setItem(
+        "apartmentSimNeedActionCount",
+        actionCount
+    );
+
+    const usedCategories =
+        JSON.parse(
+            localStorage.getItem(
+                "apartmentSimUsedNeedCategories"
+            ) || "[]"
+        );
+
+    const actionCategory =
+        Object.keys(needsActions)
+            .find(category =>
+                needsActions[category]
+                    .includes(action)
+            );
+
+    if (
+        actionCategory &&
+        !usedCategories.includes(actionCategory)
+    ) {
+
+        usedCategories.push(
+            actionCategory
+        );
+
+        localStorage.setItem(
+            "apartmentSimUsedNeedCategories",
+            JSON.stringify(
+                usedCategories
+            )
+        );
+    }
+
+    Object.entries(
+        action.effects
+    ).forEach(
+        ([need, amount]) => {
+
+            if (
+                gameState.needs[need] ===
+                undefined
+            ) {
+                return;
+            }
+
+            gameState.needs[need] +=
+                amount;
+
+            gameState.needs[need] =
+                Math.max(
+                    0,
+                    Math.min(
+                        100,
+                        gameState.needs[need]
+                    )
+                );
+        }
+    );
+
+    saveGameState();
+
+    updateNeeds();
+    updateMood();
+
+    showNeedActionFeedback(
+        action
+    );
+
+    checkAchievements();
+}
+
+
+function showNeedActionFeedback(action) {
+
+    const feedback =
+        document.createElement("div");
+
+    feedback.className =
+        "task-feedback";
+
+    const effects =
+        Object.entries(action.effects)
+            .map(
+                ([need, amount]) => {
+
+                    const formattedNeed =
+                        need.charAt(0).toUpperCase() +
+                        need.slice(1);
+
+                    return (
+                        `+${amount} ${formattedNeed}`
+                    );
+                }
+            )
+            .join(" • ");
+
+    feedback.textContent =
+        effects;
+
+    document.body.appendChild(
+        feedback
+    );
+
+    setTimeout(() => {
+        feedback.remove();
+    }, 2500);
+}
+
+
+// =========================
+// RENDER NEED ACTIONS
+// =========================
+
+function renderNeedActions(need) {
+
+    const container =
+        document.getElementById(
+            `${need}-actions`
+        );
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = "";
+
+    const actions =
+        needsActions[need];
+
+    if (!actions) {
+        return;
+    }
+
     const categories =
         categoryMap[need];
 
-    // If this need has no categories,
-    // use the normal action grid.
     if (!categories) {
 
         actions.forEach(action => {
@@ -2143,71 +2783,100 @@ const categoryMap = {
         return;
     }
 
-    Object.entries(categories).forEach(
-        ([categoryName, actionNames]) => {
+    Object.entries(categories)
+        .forEach(
+            ([categoryName, actionNames]) => {
 
-            const categoryActions =
-                actions.filter(action =>
-                    actionNames.includes(action.name)
+                const categoryActions =
+                    actions.filter(
+                        action =>
+                            actionNames.includes(
+                                action.name
+                            )
+                    );
+
+                if (
+                    categoryActions.length === 0
+                ) {
+                    return;
+                }
+
+                const category =
+                    document.createElement(
+                        "section"
+                    );
+
+                category.className =
+                    "need-action-category";
+
+                category.innerHTML = `
+                    <div class="need-action-category-heading">
+                        <h3>${categoryName}</h3>
+                    </div>
+                `;
+
+                const grid =
+                    document.createElement(
+                        "div"
+                    );
+
+                grid.className =
+                    "action-grid";
+
+                categoryActions.forEach(
+                    action => {
+
+                        createNeedAction(
+                            grid,
+                            action
+                        );
+                    }
                 );
 
-            if (categoryActions.length === 0) {
-                return;
+                category.appendChild(
+                    grid
+                );
+
+                container.appendChild(
+                    category
+                );
             }
-
-            const category =
-                document.createElement("section");
-
-            category.className =
-                "need-action-category";
-
-            category.innerHTML = `
-                <div class="need-action-category-heading">
-                    <h3>${categoryName}</h3>
-                </div>
-            `;
-
-            const grid =
-                document.createElement("div");
-
-            grid.className =
-                "action-grid";
-
-            categoryActions.forEach(action => {
-                createNeedAction(
-                    grid,
-                    action
-                );
-            });
-
-            category.appendChild(grid);
-            container.appendChild(category);
-        }
-    );
+        );
 }
 
 
-function createNeedAction(container, action) {
+function createNeedAction(
+    container,
+    action
+) {
 
     const button =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
 
     button.type = "button";
-    button.className = "need-action";
+
+    button.className =
+        "need-action";
 
     const effectText =
         Object.entries(action.effects)
-            .map(([effect, amount]) => {
+            .map(
+                ([effect, amount]) => {
 
-                const formattedEffect =
-                    effect.charAt(0).toUpperCase() +
-                    effect.slice(1);
+                    const formattedEffect =
+                        effect.charAt(0).toUpperCase() +
+                        effect.slice(1);
 
-                return "+" +
-                    amount +
-                    " " +
-                    formattedEffect;
-            })
+                    return (
+                        "+" +
+                        amount +
+                        " " +
+                        formattedEffect
+                    );
+                }
+            )
             .join(" • ");
 
     button.innerHTML = `
@@ -2225,83 +2894,9 @@ function createNeedAction(container, action) {
         () => performNeedAction(action)
     );
 
-    container.appendChild(button);
-}
-
-
-// =========================
-// SAVE GAME STATE
-// =========================
-
-function saveGameState() {
-
-    localStorage.setItem(
-        "apartmentSimGameState",
-        JSON.stringify(gameState)
+    container.appendChild(
+        button
     );
-}
-
-
-// =========================
-// NEED DECAY
-// =========================
-
-function updateNeedsFromTime() {
-
-    const now =
-        Date.now();
-
-
-    const elapsedHours =
-        (
-            now -
-            gameState.lastNeedsUpdate
-        ) /
-        (1000 * 60 * 60);
-
-
-    if (elapsedHours <= 0) {
-        return;
-    }
-
-
-    Object.entries(
-        NEED_DECAY_PER_HOUR
-    )
-    .forEach(
-        ([need, decayRate]) => {
-
-            if (
-                gameState.needs[need] ===
-                undefined
-            ) {
-
-                return;
-            }
-
-
-            gameState.needs[need] -=
-                decayRate *
-                elapsedHours;
-
-
-            gameState.needs[need] =
-                Math.max(
-                    0,
-                    Math.min(
-                        100,
-                        gameState.needs[need]
-                    )
-                );
-        }
-    );
-
-
-    gameState.lastNeedsUpdate =
-        now;
-
-
-    saveGameState();
 }
 
 
@@ -2312,7 +2907,9 @@ function updateNeedsFromTime() {
 function renderTasks() {
 
     const taskList =
-        document.getElementById("cleaning-task-list");
+        document.getElementById(
+            "cleaning-task-list"
+        );
 
     if (!taskList) {
         return;
@@ -2334,50 +2931,57 @@ function renderTasks() {
 
         const roomTasks =
             todaysTasks.filter(
-                task => task.category === room
+                task =>
+                    task.category === room
             );
 
         if (roomTasks.length === 0) {
             return;
         }
 
-        // Room section
         const roomSection =
-            document.createElement("section");
+            document.createElement(
+                "section"
+            );
 
         roomSection.className =
             "cleaning-room";
 
-        // Room heading
         const roomHeading =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         roomHeading.className =
             "cleaning-room-heading";
 
+        const completedCount =
+            roomTasks.filter(
+                task =>
+                    isCompletedToday(
+                        task.id
+                    )
+            ).length;
+
         roomHeading.innerHTML = `
             <h3>${room}</h3>
             <span>
-                ${
-                    roomTasks.filter(task =>
-                        isCompletedToday(task.id)
-                    ).length
-                }
-                /
-                ${roomTasks.length}
+                ${completedCount} / ${roomTasks.length}
             </span>
         `;
 
-        roomSection.appendChild(roomHeading);
+        roomSection.appendChild(
+            roomHeading
+        );
 
-        // Tasks
         const roomTaskList =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         roomTaskList.className =
             "cleaning-room-tasks";
 
-        // Incomplete tasks first
         roomTasks.sort((a, b) => {
 
             const aCompleted =
@@ -2386,7 +2990,10 @@ function renderTasks() {
             const bCompleted =
                 isCompletedToday(b.id);
 
-            if (aCompleted === bCompleted) {
+            if (
+                aCompleted ===
+                bCompleted
+            ) {
                 return 0;
             }
 
@@ -2396,14 +3003,22 @@ function renderTasks() {
         roomTasks.forEach(task => {
 
             const completed =
-                isCompletedToday(task.id);
+                isCompletedToday(
+                    task.id
+                );
 
             const taskElement =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
             taskElement.className =
                 "task" +
-                (completed ? " completed" : "");
+                (
+                    completed
+                        ? " completed"
+                        : ""
+                );
 
             taskElement.innerHTML = `
                 <input
@@ -2419,11 +3034,12 @@ function renderTasks() {
                     </div>
 
                     <div class="task-category">
-                        ${task.recurrence.type === "daily"
-                            ? "Daily"
-                            : task.recurrence.type === "weekly"
-                            ? "Weekly"
-                            : `Every ${task.recurrence.days} days`
+                        ${
+                            task.recurrence.type === "daily"
+                                ? "Daily"
+                                : task.recurrence.type === "weekly"
+                                    ? "Weekly"
+                                    : `Every ${task.recurrence.days} days`
                         }
                     </div>
 
@@ -2439,23 +3055,33 @@ function renderTasks() {
                     ".task-checkbox"
                 );
 
-            checkbox.addEventListener(
-                "change",
-                () => completeTask(task.id)
+            if (checkbox) {
+
+                checkbox.addEventListener(
+                    "change",
+                    () => completeTask(
+                        task.id
+                    )
+                );
+            }
+
+            roomTaskList.appendChild(
+                taskElement
             );
-
-            roomTaskList.appendChild(taskElement);
-
         });
 
-        roomSection.appendChild(roomTaskList);
+        roomSection.appendChild(
+            roomTaskList
+        );
 
-        taskList.appendChild(roomSection);
-
+        taskList.appendChild(
+            roomSection
+        );
     });
 
     updateTaskProgress();
 }
+
 
 // =========================
 // TASK PROGRESS
@@ -2466,7 +3092,6 @@ function updateTaskProgress() {
     const todaysTasks =
         getTodaysTasks();
 
-
     const completed =
         todaysTasks.filter(
             task =>
@@ -2475,216 +3100,208 @@ function updateTaskProgress() {
                 )
         ).length;
 
+    const progress =
+        document.getElementById(
+            "task-progress"
+        );
 
-    document.getElementById(
-        "task-progress"
-    ).textContent =
-        `${completed} / ${todaysTasks.length} complete`;
-}
+    if (progress) {
 
-
-// =========================
-// XP SYSTEM
-// =========================
-
-function addXP(amount) {
-
-    gameState.xp += amount;
-
-
-    while (
-        gameState.xp >= 100
-    ) {
-
-        gameState.xp -= 100;
-
-        gameState.level++;
+        progress.textContent =
+            `${completed} / ${todaysTasks.length} complete`;
     }
-
-
-    updateXPDisplay();
-
-    saveGameState();
 }
-
-
-function updateXPDisplay() {
-
-    document.getElementById(
-        "level"
-    ).textContent =
-        gameState.level;
-
-
-    document.getElementById(
-        "xp-text"
-    ).textContent =
-        `${gameState.xp} / 100 XP`;
-
-
-    document.getElementById(
-        "xp-fill"
-    ).style.width =
-        `${gameState.xp}%`;
-}
-
-
-// =========================
-// NEEDS
-// =========================
-
-function updateNeeds() {
-
-    Object.entries(gameState.needs)
-        .forEach(([need, value]) => {
-
-            const bar =
-                document.getElementById(
-                    `${need}-bar`
-                );
-
-            const valueDisplay =
-                document.getElementById(
-                    `${need}-value`
-                );
-
-            if (bar && valueDisplay) {
-
-                bar.style.width =
-                    `${value}%`;
-
-                valueDisplay.textContent =
-                    Math.round(value) + "%";
-            }
-
-
-            const popupBar =
-                document.getElementById(
-                    `popup-${need}-bar`
-                );
-
-            const popupValue =
-                document.getElementById(
-                    `popup-${need}-value`
-                );
-
-            if (popupBar) {
-
-                popupBar.style.width =
-                    `${value}%`;
-            }
-
-            if (popupValue) {
-
-                popupValue.textContent =
-                    Math.round(value) + "%";
-            }
-
-        });
-}
-
-const needsPopup =
-    document.getElementById("needs-popup");
-
-const needsPopupToggle =
-    document.getElementById("needs-popup-toggle");
-
-const needsPopupOpen =
-    document.getElementById("needs-popup-open");
-
-
-needsPopupToggle.addEventListener(
-    "click",
-    () => {
-
-        needsPopup.style.display = "none";
-        needsPopupOpen.style.display = "block";
-
-    }
-);
-
-
-needsPopupOpen.addEventListener(
-    "click",
-    () => {
-
-        needsPopup.style.display = "block";
-        needsPopupOpen.style.display = "none";
-
-    }
-);
-
 
 
 // =========================
 // MOOD
 // =========================
 
-function updateMood() {
+function getCurrentMood() {
+
+    const needs =
+        gameState.needs;
+
+    if (needs.energy < 20) {
+
+        return {
+            name: "Exhausted",
+            description:
+                "You really need some rest."
+        };
+    }
+
+    if (needs.hunger < 20) {
+
+        return {
+            name: "Starving",
+            description:
+                "Your body is asking to be fed."
+        };
+    }
+
+    if (needs.cleanliness < 20) {
+
+        return {
+            name: "Grimy",
+            description:
+                "A shower or some cleaning would help."
+        };
+    }
+
+    if (needs.social < 20) {
+
+        return {
+            name: "Lonely",
+            description:
+                "You could use some connection."
+        };
+    }
+
+    if (needs.fun < 20) {
+
+        return {
+            name: "Bored",
+            description:
+                "You need something enjoyable to do."
+        };
+    }
+
+    if (needs.environment < 20) {
+
+        return {
+            name: "Uncomfortable",
+            description:
+                "Your surroundings are bringing you down."
+        };
+    }
+
+    if (
+        needs.energy >= 75 &&
+        needs.environment >= 75
+    ) {
+
+        return {
+            name: "Cozy",
+            description:
+                "You feel rested and at home in your space."
+        };
+    }
+
+    if (
+        needs.fun >= 75 &&
+        needs.social >= 75
+    ) {
+
+        return {
+            name: "Social Butterfly",
+            description:
+                "You're feeling connected and entertained."
+        };
+    }
+
+    if (
+        needs.cleanliness >= 75 &&
+        needs.environment >= 75
+    ) {
+
+        return {
+            name: "Fresh & Put Together",
+            description:
+                "Everything feels clean, fresh, and in order."
+        };
+    }
+
+    if (
+        needs.energy >= 75 &&
+        needs.fun >= 75
+    ) {
+
+        return {
+            name: "Inspired",
+            description:
+                "You have the energy to actually enjoy yourself."
+        };
+    }
 
     const values =
-        Object.values(
-            gameState.needs
-        );
-
+        Object.values(needs);
 
     const average =
         values.reduce(
             (sum, value) =>
                 sum + value,
             0
-        ) /
-        values.length;
-
-
-    let mood;
-
+        ) / values.length;
 
     if (average >= 80) {
 
-        mood =
-            "Feeling Great";
-
-    } else if (average >= 65) {
-
-        mood =
-            "Feeling Good";
-
-    } else if (average >= 45) {
-
-        mood =
-            "Feeling Neutral";
-
-    } else if (average >= 25) {
-
-        mood =
-            "Feeling Uncomfortable";
-
-    } else {
-
-        mood =
-            "Feeling Miserable";
+        return {
+            name: "Feeling Great",
+            description:
+                "All your needs are being taken care of."
+        };
     }
 
+    if (average >= 65) {
 
-    const moodElement =
+        return {
+            name: "Feeling Good",
+            description:
+                "Things are feeling pretty balanced."
+        };
+    }
+
+    if (average >= 45) {
+
+        return {
+            name: "Feeling Neutral",
+            description:
+                "You're doing okay, but there's room for improvement."
+        };
+    }
+
+    if (average >= 25) {
+
+        return {
+            name: "Feeling Uncomfortable",
+            description:
+                "A few needs are starting to pile up."
+        };
+    }
+
+    return {
+        name: "Miserable",
+        description:
+            "Several needs are seriously neglected."
+    };
+}
+
+
+function updateMood() {
+
+    const mood =
+        getCurrentMood();
+
+    const moodDisplay =
         document.getElementById(
             "mood"
         );
 
-
-    if (moodElement) {
-
-        moodElement.textContent =
-            mood;
+    if (moodDisplay) {
+        moodDisplay.textContent =
+            mood.name;
     }
 
     const popupMood =
-    document.getElementById("popup-mood");
+        document.getElementById(
+            "popup-mood"
+        );
 
-if (popupMood) {
-    popupMood.textContent = mood;
-}
+    if (popupMood) {
+        popupMood.textContent =
+            mood.name;
+    }
 }
 
 
@@ -2699,7 +3316,6 @@ function displayDate() {
             getToday()
         );
 
-
     const formattedDate =
         today.toLocaleDateString(
             undefined,
@@ -2711,12 +3327,10 @@ function displayDate() {
             }
         );
 
-
     const dateElement =
         document.getElementById(
             "current-date"
         );
-
 
     if (dateElement) {
 
@@ -2727,63 +3341,39 @@ function displayDate() {
 
 
 // =========================
-// INITIALIZE
-// =========================
-
-updateNeedsFromTime();
-
-displayDate();
-
-renderTasks();
-
-updateXPDisplay();
-
-updateNeeds();
-
-updateMood();
-
-
-// Bars update while app is open
-
-setInterval(() => {
-
-    updateNeedsFromTime();
-
-    updateNeeds();
-
-}, 60000);
-
-
-renderNeedActions("hunger");
-
-renderNeedActions("energy");
-
-renderNeedActions("fun");
-
-renderNeedActions("social");
-
-// =========================
 // PAGE NAVIGATION
 // =========================
 
 function showPage(pageName) {
 
     const pages =
-        document.querySelectorAll(".page");
+        document.querySelectorAll(
+            ".page"
+        );
 
     const navButtons =
-        document.querySelectorAll(".nav-button");
+        document.querySelectorAll(
+            ".nav-button"
+        );
 
     pages.forEach(page => {
-        page.classList.remove("active");
+
+        page.classList.remove(
+            "active"
+        );
     });
 
     navButtons.forEach(button => {
-        button.classList.remove("active");
+
+        button.classList.remove(
+            "active"
+        );
     });
 
     const selectedPage =
-        document.getElementById(`page-${pageName}`);
+        document.getElementById(
+            `page-${pageName}`
+        );
 
     const selectedButton =
         document.querySelector(
@@ -2791,192 +3381,310 @@ function showPage(pageName) {
         );
 
     if (selectedPage) {
-        selectedPage.classList.add("active");
+
+        selectedPage.classList.add(
+            "active"
+        );
     }
 
     if (selectedButton) {
-        selectedButton.classList.add("active");
+
+        selectedButton.classList.add(
+            "active"
+        );
     }
 }
 
 
-document
-    .querySelectorAll(".nav-button")
-    .forEach(button => {
+function setupNavigation() {
 
-        button.addEventListener("click", () => {
+    document
+        .querySelectorAll(".nav-button")
+        .forEach(button => {
 
-            const pageName =
-                button.dataset.page;
+            button.addEventListener(
+                "click",
+                () => {
 
-            showPage(pageName);
+                    const pageName =
+                        button.dataset.page;
 
+                    showPage(pageName);
+                }
+            );
         });
+}
 
-    });
 
-    // =========================
+// =========================
+// NEEDS POPUP
+// =========================
+
+function setupNeedsPopup() {
+
+    if (
+        !needsPopup ||
+        !needsPopupOpen ||
+        !needsPopupToggle
+    ) {
+        console.warn(
+            "Needs popup elements were not found."
+        );
+
+        return;
+    }
+
+    needsPopupOpen.addEventListener(
+        "click",
+        () => {
+
+            needsPopup.classList.remove(
+                "needs-popup-hidden"
+            );
+        }
+    );
+
+    needsPopupToggle.addEventListener(
+        "click",
+        () => {
+
+            needsPopup.classList.add(
+                "needs-popup-hidden"
+            );
+        }
+    );
+}
+
+
+// =========================
 // MOVABLE NEEDS PANEL
 // =========================
 
-const needsPanel =
-    document.getElementById("needs-popup");
+function setupNeedsDragging() {
 
-const needsPanelHeader =
-    document.querySelector(".needs-popup-header");
+    if (!needsPopup) {
+        return;
+    }
 
-let isDraggingNeeds = false;
-let needsOffsetX = 0;
-let needsOffsetY = 0;
-
-needsPanelHeader.addEventListener(
-    "pointerdown",
-    event => {
-
-        // Don't start dragging when clicking the close button
-        if (
-            event.target.closest(
-                ".needs-popup-toggle"
-            )
-        ) {
-            return;
-        }
-
-        const rect =
-            needsPanel.getBoundingClientRect();
-
-        isDraggingNeeds = true;
-
-        needsOffsetX =
-            event.clientX - rect.left;
-
-        needsOffsetY =
-            event.clientY - rect.top;
-
-        needsPanelHeader.setPointerCapture(
-            event.pointerId
+    const needsPanelHeader =
+        document.querySelector(
+            ".needs-popup-header"
         );
 
-        needsPanelHeader.style.cursor =
-            "grabbing";
+    if (!needsPanelHeader) {
+        return;
     }
-);
 
+    let isDraggingNeeds = false;
 
-needsPanelHeader.addEventListener(
-    "pointermove",
-    event => {
+    let needsOffsetX = 0;
+    let needsOffsetY = 0;
 
-        if (!isDraggingNeeds) {
-            return;
+    needsPanelHeader.addEventListener(
+        "pointerdown",
+        event => {
+
+            if (
+                event.target.closest(
+                    ".needs-popup-toggle"
+                )
+            ) {
+                return;
+            }
+
+            const rect =
+                needsPopup.getBoundingClientRect();
+
+            isDraggingNeeds = true;
+
+            needsOffsetX =
+                event.clientX -
+                rect.left;
+
+            needsOffsetY =
+                event.clientY -
+                rect.top;
+
+            needsPanelHeader.setPointerCapture(
+                event.pointerId
+            );
+
+            needsPanelHeader.style.cursor =
+                "grabbing";
         }
+    );
 
-        let left =
-            event.clientX - needsOffsetX;
+    needsPanelHeader.addEventListener(
+        "pointermove",
+        event => {
 
-        let top =
-            event.clientY - needsOffsetY;
+            if (!isDraggingNeeds) {
+                return;
+            }
 
-        const maxLeft =
-            window.innerWidth -
-            needsPanel.offsetWidth;
+            let left =
+                event.clientX -
+                needsOffsetX;
 
-        const maxTop =
-            window.innerHeight -
-            needsPanel.offsetHeight;
+            let top =
+                event.clientY -
+                needsOffsetY;
 
-        left =
-            Math.max(
-                0,
-                Math.min(left, maxLeft)
-            );
+            const maxLeft =
+                window.innerWidth -
+                needsPopup.offsetWidth;
 
-        top =
-            Math.max(
-                0,
-                Math.min(top, maxTop)
-            );
+            const maxTop =
+                window.innerHeight -
+                needsPopup.offsetHeight;
 
-        needsPanel.style.left =
-            `${left}px`;
+            left =
+                Math.max(
+                    0,
+                    Math.min(
+                        left,
+                        maxLeft
+                    )
+                );
 
-        needsPanel.style.top =
-            `${top}px`;
+            top =
+                Math.max(
+                    0,
+                    Math.min(
+                        top,
+                        maxTop
+                    )
+                );
 
-        needsPanel.style.right =
-            "auto";
+            needsPopup.style.left =
+                `${left}px`;
 
-        needsPanel.style.bottom =
-            "auto";
-    }
-);
+            needsPopup.style.top =
+                `${top}px`;
+
+            needsPopup.style.right =
+                "auto";
+
+            needsPopup.style.bottom =
+                "auto";
+        }
+    );
+
+    needsPanelHeader.addEventListener(
+        "pointerup",
+        event => {
+
+            isDraggingNeeds = false;
+
+            needsPanelHeader.style.cursor =
+                "grab";
+
+            if (
+                needsPanelHeader.hasPointerCapture(
+                    event.pointerId
+                )
+            ) {
+
+                needsPanelHeader.releasePointerCapture(
+                    event.pointerId
+                );
+            }
+        }
+    );
+
+    needsPanelHeader.addEventListener(
+        "pointercancel",
+        () => {
+
+            isDraggingNeeds = false;
+
+            needsPanelHeader.style.cursor =
+                "grab";
+        }
+    );
+}
 
 
-needsPanelHeader.addEventListener(
-    "pointerup",
-    event => {
+// =========================
+// INITIALIZE APP
+// =========================
 
-        isDraggingNeeds = false;
+function initializeApp() {
 
-        needsPanelHeader.style.cursor =
-            "grab";
-
-        needsPanelHeader.releasePointerCapture(
-            event.pointerId
-        );
-    }
-);
-
-
-needsPanelHeader.addEventListener(
-    "pointercancel",
-    () => {
-
-        isDraggingNeeds = false;
-
-        needsPanelHeader.style.cursor =
-            "grab";
-    }
-);
-
-updateNeedsFromTime();
-
-displayDate();
-
-renderTasks();
-
-updateXPDisplay();
-
-updateNeeds();
-
-updateMood();
-
-setInterval(() => {
     updateNeedsFromTime();
+
+    displayDate();
+
+    renderTasks();
+
+    updateXPDisplay();
+
     updateNeeds();
-}, 60000);
 
-renderNeedActions("hunger");
-renderNeedActions("energy");
-renderNeedActions("fun");
-renderNeedActions("social");
+    updateMood();
 
-needsPopupOpen.addEventListener("click", () => {
-    needsPopup.classList.remove("needs-popup-hidden");
-});
+    setupNavigation();
 
-needsPopupToggle.addEventListener("click", () => {
-    needsPopup.classList.add("needs-popup-hidden");
-});
+    setupNeedsPopup();
+
+    setupNeedsDragging();
+
+    renderNeedActions("hunger");
+    renderNeedActions("energy");
+    renderNeedActions("fun");
+    renderNeedActions("social");
+
+    renderAchievements();
+
+    setInterval(
+        () => {
+
+            updateNeedsFromTime();
+
+            updateNeeds();
+
+            updateMood();
+
+        },
+        60000
+    );
+}
+
+
+// =========================
+// SERVICE WORKER
+// =========================
 
 if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js")
-            .then(() => {
-                console.log("Apartment Sim service worker registered.");
-            })
-            .catch(error => {
-                console.error("Service worker registration failed:", error);
-            });
-    });
+
+    window.addEventListener(
+        "load",
+        () => {
+
+            navigator.serviceWorker
+                .register(
+                    "./service-worker.js"
+                )
+                .then(() => {
+
+                    console.log(
+                        "Apartment Sim service worker registered."
+                    );
+                })
+                .catch(error => {
+
+                    console.error(
+                        "Service worker registration failed:",
+                        error
+                    );
+                });
+        }
+    );
 }
+
+
+// =========================
+// START
+// =========================
+
+initializeApp();
